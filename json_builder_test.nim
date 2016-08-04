@@ -22,6 +22,8 @@ suite "JSON object":
       builder.add_entry("nim", "Andreas Rumpf")
       builder.add_entry("ruby", "Yukihiro Matsumoto")
       builder.add_entry("smalltalk", "Alan Kay")
+      builder.add_entry("total_languages", 1000)
+      builder.add_entry("not_php", 99.999)
     builder.finish()
     validate_json_object(builder)
 
@@ -30,6 +32,19 @@ suite "JSON object":
       builder.add_entry("Andreas Rumpf")
       builder.add_entry("Yukihiro Matsumoto")
       builder.add_entry("Alan Kay")
+      builder.add_entry(1000)
+      builder.add_entry(99.999)
+    builder.finish()
+    validate_json_object(builder)
+
+  test "it lets us add an array in an array":
+    builder.add_array "board":
+      builder.add_array:
+        builder.add_entry("a0")
+        builder.add_entry("b0")
+      builder.add_array:
+        builder.add_entry("a1")
+        builder.add_entry("b1")
     builder.finish()
     validate_json_object(builder)
 

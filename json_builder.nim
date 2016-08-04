@@ -1,59 +1,30 @@
 ## This module attempts to solve the problem of easy, incremental
 ## JSON creation.
+##
+## Simple usage example:
+##
+## .. code-block:: nim
+##  let builder = newJsonObjectBuilder()
+##  builder.add_entry("key", "value") # only deals with strings so far
+##  builder.add_array("key"):
+##
+## Limitations:
+## - Cannot handle empty-string keys
+## - Cannot handle values other than strings and numbers (calls $ on everything else)
 
-
-## parser. JSON (JavaScript Object Notation) is a lightweight
-## data-interchange format that is easy for humans to read and write
-## (unlike XML). It is easy for machines to parse and generate.
-## JSON is based on a subset of the JavaScript Programming Language,
-## Standard ECMA-262 3rd Edition - December 1999.
-##
-## Usage example:
-##
-## .. code-block:: nim
-##  let
-##    small_json = """{"test": 1.3, "key2": true}"""
-##    jobj = parseJson(small_json)
-##  assert (jobj.kind == JObject)
-##  echo($jobj["test"].fnum)
-##  echo($jobj["key2"].bval)
-##
-## Results in:
-##
-## .. code-block:: nim
-##
-##   1.3000000000000000e+00
-##   true
-##
-## This module can also be used to comfortably create JSON using the `%*`
-## operator:
-##
-## .. code-block:: nim
-##
-##   var hisName = "John"
-##   let herAge = 31
-##   var j = %*
-##     [
-##       {
-##         "name": hisName,
-##         "age": 30
-##       },
-##       {
-##         "name": "Susan",
-##         "age": herAge
-##       }
-##     ]
-##
-##    var j2 = %* {"name": "Isaac", "books": ["Robot Dreams"]}
-##    j2["details"] = %* {"age":35, "pi":3.1415}
-##    echo j2
 
 
 import strutils
 import sequtils
 import json # Only used for escapeJson
 
-### Internal Utility Methods
+### Private Utility Methods
+
+proc optionallyEscapeJson[T](value:T): string =
+  if (T is SomeNumber):
+    result = $value
+  else:
+    result = escapeJson($value)
 
 proc closer_for(opener = "{"): string =
   if opener == "{":
@@ -67,7 +38,7 @@ proc last[T](s: seq[T]): T =
   ## Why is this not part of sequtils?
   s[s.len-1]
 
-### External JsonBuilder
+### JsonBuilder
 
 type JsonBuilder* = tuple[output: string, terminator_stack: seq[string], flags: set[char]]
 
@@ -104,7 +75,7 @@ proc colon(builder: var JsonBuilder) =
 proc open(builder: var JsonBuilder, key = "", opener = "{") =
   builder.indent()
   if key != "" :
-    builder.output &= escapeJson(key)
+    builder.output &= optionallyEscapeJson(key)
     builder.colon()
   builder.terminator_stack.add closer_for(opener)
   builder.output &= opener
@@ -134,34 +105,45 @@ proc newJsonObjectBuilder*():JsonBuilder =
 proc newCompactJsonObjectBuilder*():JsonBuilder =
   newJsonBuilder("{", {'c'})
 
-template add_array*(builder: var JsonBuilder, key = "", code: untyped): untyped =
+proc is_array_context*(builder: var JsonBuilder): bool =
+  builder.terminator_stack.last() == "]"
+
+template add_array*(builder: var JsonBuilder, key, code: untyped): untyped =
   builder.open(key, "[")
   code
   builder.close()
 
-proc array_entry*(builder: var JsonBuilder, item: string) =
-  builder.indent()
-  builder.output &= escapeJson(item)
-  builder.comma()
+template add_array*(builder: var JsonBuilder, code: untyped): untyped =
+  ## Fixes an odd bug with empty keys
+  builder.add_array("", code)
 
 template add_object*(builder: var JsonBuilder, key = "", code: untyped): untyped =
   builder.open(key, "{")
   code
   builder.close()
 
-proc object_entry*(builder: var JsonBuilder, key, value: string) =
+proc array_entry*[T](builder: var JsonBuilder, item: T) =
   builder.indent()
-  builder.output &= escapeJson(key)
-  builder.colon()
-  builder.output &= escapeJson(value)
+  builder.output &= optionallyEscapeJson(item)
   builder.comma()
 
-proc is_in_array*(builder: var JsonBuilder): bool =
-  builder.terminator_stack.last() == "]"
+proc object_entry*[T](builder: var JsonBuilder, key: string, value: T) =
+  builder.indent()
+  builder.output &= optionallyEscapeJson(key)
+  builder.colon()
+  builder.output &= optionallyEscapeJson(value)
+  builder.comma()
 
-proc add_entry*(builder: var JsonBuilder, kv: varargs[string]) {.raises: [InvalidEntryError] .} =
-  if builder.is_in_array():
-    builder.array_entry kv[0]
-  else:
-    builder.object_entry kv[0], kv[1]
+
+proc add_entry*[T](builder: var JsonBuilder, value: T) {.raises: [InvalidEntryError] .} =
+  if not builder.is_array_context():
+    raise newException(InvalidEntryError, "No value given; Both key and value required for an entry to an object")
+  builder.array_entry value
+
+proc add_entry*[T](builder: var JsonBuilder, key: string, value: T) {.raises: [InvalidEntryError] .} =
+  if builder.is_array_context():
+    raise newException(InvalidEntryError, "Provided key and value; only value required when an entry to an array")
+  builder.object_entry key, value
+
+
 
