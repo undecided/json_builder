@@ -1,3 +1,54 @@
+## This module attempts to solve the problem of easy, incremental
+## JSON creation.
+
+
+## parser. JSON (JavaScript Object Notation) is a lightweight
+## data-interchange format that is easy for humans to read and write
+## (unlike XML). It is easy for machines to parse and generate.
+## JSON is based on a subset of the JavaScript Programming Language,
+## Standard ECMA-262 3rd Edition - December 1999.
+##
+## Usage example:
+##
+## .. code-block:: nim
+##  let
+##    small_json = """{"test": 1.3, "key2": true}"""
+##    jobj = parseJson(small_json)
+##  assert (jobj.kind == JObject)
+##  echo($jobj["test"].fnum)
+##  echo($jobj["key2"].bval)
+##
+## Results in:
+##
+## .. code-block:: nim
+##
+##   1.3000000000000000e+00
+##   true
+##
+## This module can also be used to comfortably create JSON using the `%*`
+## operator:
+##
+## .. code-block:: nim
+##
+##   var hisName = "John"
+##   let herAge = 31
+##   var j = %*
+##     [
+##       {
+##         "name": hisName,
+##         "age": 30
+##       },
+##       {
+##         "name": "Susan",
+##         "age": herAge
+##       }
+##     ]
+##
+##    var j2 = %* {"name": "Isaac", "books": ["Robot Dreams"]}
+##    j2["details"] = %* {"age":35, "pi":3.1415}
+##    echo j2
+
+
 import strutils
 import sequtils
 import json # Only used for escapeJson
@@ -12,10 +63,15 @@ proc closer_for(opener = "{"): string =
   else:
     result = "" # TODO: unknown error?
 
+proc last[T](s: seq[T]): T =
+  ## Why is this not part of sequtils?
+  s[s.len-1]
 
 ### External JsonBuilder
 
 type JsonBuilder* = tuple[output: string, terminator_stack: seq[string], flags: set[char]]
+
+type InvalidEntryError* = object of Exception
 
 var levels = newSeq[string]()
 
@@ -99,4 +155,13 @@ proc object_entry*(builder: var JsonBuilder, key, value: string) =
   builder.colon()
   builder.output &= escapeJson(value)
   builder.comma()
+
+proc is_in_array*(builder: var JsonBuilder): bool =
+  builder.terminator_stack.last() == "]"
+
+proc add_entry*(builder: var JsonBuilder, kv: varargs[string]) {.raises: [InvalidEntryError] .} =
+  if builder.is_in_array():
+    builder.array_entry kv[0]
+  else:
+    builder.object_entry kv[0], kv[1]
 
