@@ -10,6 +10,7 @@
 ##
 ## Limitations:
 ## - Cannot handle empty-string keys
+## - Cannot handle non-string keys
 ## - Cannot handle values other than strings and numbers (calls $ on everything else)
 
 

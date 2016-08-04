@@ -53,8 +53,10 @@ suite "JSON object":
     builder.add_object("seem"):
       builder.add_array("reasonable"):
         builder.add_entry("to")
-        builder.add_entry("you?")
-      builder.add_entry("depends", "on")
+        builder.add_entry(1)
+        builder.add_entry(2.2)
+      builder.add_entry("depends", 1)
+      builder.add_entry("on", 2.2)
     builder.add_entry("your", "perspective")
     builder.finish()
     validate_json_object(builder)
@@ -64,9 +66,11 @@ suite "JSON object":
   "seem": {
     "reasonable": [
       "to",
-      "you?"
+      1,
+      2.2
     ],
-    "depends": "on"
+    "depends": 1,
+    "on": 2.2
   },
   "your": "perspective"
 }"""
@@ -92,3 +96,21 @@ suite "compact JSON object":
     builder.finish()
     validate_json_object(builder)
     check(builder.`$`.count(Whitespace + NewLines) == 0)
+
+
+  test "it is unreadable":
+    builder.add_entry("does", "this")
+    builder.add_object("seem"):
+      builder.add_array("reasonable"):
+        builder.add_entry("to")
+        builder.add_entry(1)
+        builder.add_entry(2.2)
+      builder.add_entry("depends", 1)
+      builder.add_entry("on", 2.2)
+    builder.add_entry("your", "perspective")
+    builder.finish()
+    validate_json_object(builder)
+    let expected = """{"does":"this","seem":{"reasonable":["to",1,2.2],"depends":1,"on":2.2},"your":"perspective"}"""
+    let actual = $(builder)
+    check(expected == actual)
+
