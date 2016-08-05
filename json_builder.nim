@@ -18,11 +18,13 @@
 ##  builder.finish() # adds the closing }
 ##  echo builder # $builder produces the current json string
 ##
+## For more in-depth usage examples, see json_builder_test.nim
+##
 ## Limitations:
 ## - Cannot handle empty-string keys
 ## - Cannot handle non-string keys
 ## - Cannot handle values other than strings and numbers (calls $ on everything else)
-
+## - Very easy to create invalid JSON - very few safeguards here.
 
 import strutils
 import sequtils
@@ -97,7 +99,7 @@ proc close(builder: var JsonBuilder) =
 ### Constructors
 
 proc newJsonBuilder*(opener = "{", flags: set[char] = {}):JsonBuilder =
-  ## Create a new JSON builder. Default to a standard JS object, however for 
+  ## Create a new JSON builder. Default to a standard JS object, however for
   ## full forward compatibility, use of newJsonObjectBuilder() is recommended.
   ## Produces a "pretty" JSON output - by default, set flags to {'c'} to avoid
   ## syntactically unnecessary whitespace
@@ -139,7 +141,7 @@ proc is_array_context*(builder: var JsonBuilder): bool =
   builder.terminator_stack.last() == "]"
 
 template add_array*(builder: var JsonBuilder, key:string, code: untyped): untyped =
-  ## Add an array as an element to the current container. 
+  ## Add an array as an element to the current container.
   builder.open(key, "[")
   code
   builder.close()
@@ -150,7 +152,7 @@ template add_array*(builder: var JsonBuilder, code: untyped): untyped =
   builder.add_array("", code)
 
 template add_object*(builder: var JsonBuilder, key = "", code: untyped): untyped =
-  ## Add an object as an element to the current container. 
+  ## Add an object as an element to the current container.
   builder.open(key, "{")
   code
   builder.close()

@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.1.1"
 author        = "Matthew Bennett-Lovesey"
 description   = "Easy and fast generator for valid json in nim"
 license       = "MIT"
