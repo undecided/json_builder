@@ -30,7 +30,7 @@ import strutils
 import sequtils
 import json # Only used for escapeJson
 
-### Private Utility Methods
+# ===== Private Utility Methods =====
 
 proc optionallyEscapeJson[T](value:T): string =
   if (T is SomeNumber):
@@ -50,13 +50,13 @@ proc last[T](s: seq[T]): T =
   ## Why is this not part of sequtils?
   s[s.len-1]
 
-### JsonBuilder Types
+# ===== JsonBuilder Types =====
 
 type JsonBuilder* = tuple[output: string, terminator_stack: seq[string], flags: set[char]]
 
 type InvalidEntryError* = object of Exception
 
-### Private Methods
+# ===== Private Methods =====
 
 proc is_compact(builder: var JsonBuilder): bool =
   'c' in builder.flags
@@ -96,7 +96,7 @@ proc close(builder: var JsonBuilder) =
   if builder.terminator_stack.len > 0:
     builder.comma()
 
-### Constructors
+# ===== Constructors =====
 
 proc newJsonBuilder*(opener = "{", flags: set[char] = {}):JsonBuilder =
   ## Create a new JSON builder. Default to a standard JS object, however for
@@ -129,7 +129,7 @@ proc newCompactJsonArrayBuilder*():JsonBuilder =
   ## See newJsonArrayBuilder for usage
   newJsonBuilder("[", {'c'})
 
-### Public methods
+# ===== Public methods =====
 
 proc finish*(builder: var JsonBuilder) =
   ## Close any remaining open sections/arrays
