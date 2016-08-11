@@ -58,15 +58,19 @@ type InvalidEntryError* = object of Exception
 
 # ===== Private Methods =====
 
-proc is_compact(builder: var JsonBuilder): bool =
-  'c' in builder.flags
+proc skip_comma_spacing(builder: var JsonBuilder): bool =
+  ',' in builder.flags
+
+proc skip_colon_spacing(builder: var JsonBuilder): bool =
+  ':' in builder.flags
+
+proc skip_bracket_spacing(builder: var JsonBuilder): bool =
+  '{' in builder.flags
 
 proc indent(builder: var JsonBuilder) =
-  if builder.is_compact():
-    return
   if builder.output != "":
     builder.output &= "\n"
-  builder.output &= "  ".repeat(builder.terminator_stack.len)
+    builder.output &= "  ".repeat(builder.terminator_stack.len)
 
 proc comma(builder: var JsonBuilder) =
   if builder.output.rfind("{") != builder.output.len - 1 and
@@ -74,13 +78,14 @@ proc comma(builder: var JsonBuilder) =
     builder.output &= ","
 
 proc colon(builder: var JsonBuilder) =
-  if builder.is_compact():
+  if builder.skip_colon_spacing():
     builder.output &= ":"
   else:
     builder.output &= ": "
 
 proc open(builder: var JsonBuilder, key = "", opener = "{") =
-  builder.indent()
+  if not builder.skip_bracket_spacing():
+    builder.indent()
   if key != "" :
     builder.output &= optionallyEscapeJson(key)
     builder.colon()
@@ -91,7 +96,8 @@ proc close(builder: var JsonBuilder) =
   if builder.output.rfind(",") == builder.output.len - 1:
     builder.output.removeSuffix(',')
   let x = builder.terminator_stack.pop()
-  builder.indent()
+  if not builder.skip_comma_spacing():
+    builder.indent()
   builder.output &= x
   if builder.terminator_stack.len > 0:
     builder.comma()
@@ -101,33 +107,34 @@ proc close(builder: var JsonBuilder) =
 proc newJsonBuilder*(opener = "{", flags: set[char] = {}):JsonBuilder =
   ## Create a new JSON builder. Default to a standard JS object, however for
   ## full forward compatibility, use of newJsonObjectBuilder() is recommended.
-  ## Produces a "pretty" JSON output - by default, set flags to {'c'} to avoid
-  ## syntactically unnecessary whitespace
+  ## Produces a "pretty" JSON output - by default, set flags to {':',',','{'} to avoid
+  ## syntactically unnecessary whitespace. Alternatively, for a good mix of
+  ## readability and compactness, try just {','}
   result = (output: "", terminator_stack: @[], flags: flags)
   result.open("", opener)
 
 
-proc newJsonObjectBuilder*():JsonBuilder =
+proc newJsonObjectBuilder*(flags: set[char] = {}):JsonBuilder =
   ## Create a new JSON builder, creating a standard JS object {...}
   ## Produces a "pretty" JSON output by default, use newCompactJsonObjectBuilder
   ## to avoid syntactically unnecessary whitespace
-  newJsonBuilder("{")
+  newJsonBuilder("{", flags)
 
-proc newJsonArrayBuilder*():JsonBuilder =
+proc newJsonArrayBuilder*(flags: set[char] = {}):JsonBuilder =
   ## Create a new JSON builder, creating a standard JS array [...]
   ## Note that it is not normal to create arrays as the top level container
   ## for a JSON response - some parsers may consider this illegal syntax.
-  ## Produces a "pretty" JSON output - by default, use newCompactJsonArrayBuilder
+  ## Produces a "pretty" JSON output by default, use newCompactJsonArrayBuilder
   ## to avoid syntactically unnecessary whitespace
-  newJsonBuilder("[")
+  newJsonBuilder("[", flags)
 
 proc newCompactJsonObjectBuilder*():JsonBuilder =
   ## See newJsonObjectBuilder for usage
-  newJsonBuilder("{", {'c'})
+  newJsonBuilder("{", {':',',','{'})
 
 proc newCompactJsonArrayBuilder*():JsonBuilder =
   ## See newJsonArrayBuilder for usage
-  newJsonBuilder("[", {'c'})
+  newJsonBuilder("[", {':',',','{'})
 
 # ===== Public methods =====
 
@@ -164,13 +171,15 @@ template add_object*(builder: var JsonBuilder, code: untyped): untyped =
 
 proc array_entry*[T](builder: var JsonBuilder, item: T) =
   ## Add an item to the current object, assuming our container is an array
-  builder.indent()
+  if not builder.skip_comma_spacing():
+    builder.indent()
   builder.output &= optionallyEscapeJson(item)
   builder.comma()
 
 proc object_entry*[T](builder: var JsonBuilder, key: string, value: T) =
   ## Add a key/value to the current object, assuming our container is an object
-  builder.indent()
+  if not builder.skip_comma_spacing():
+    builder.indent()
   builder.output &= optionallyEscapeJson(key)
   builder.colon()
   builder.output &= optionallyEscapeJson(value)

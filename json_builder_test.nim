@@ -86,8 +86,7 @@ suite "JSON object":
   },
   "your": "perspective"
 }"""
-    let actual = $(builder)
-    check(expected == actual)
+    check($builder == expected)
 
 
 suite "compact JSON object":
@@ -123,6 +122,32 @@ suite "compact JSON object":
     builder.finish()
     validate_json_object(builder)
     let expected = """{"does":"this","seem":{"reasonable":["to",1,2.2],"depends":1,"on":2.2},"your":"perspective"}"""
-    let actual = $(builder)
-    check(expected == actual)
+    check($builder == expected)
+
+
+
+suite "semi-compact JSON object":
+  setup:
+    builder = newJsonObjectBuilder({','})
+
+  test "it is configurably compact":
+    builder.add_entry("one", 1)
+    builder.add_entry("two", 2)
+    builder.add_entry("three", 3)
+    builder.add_array("reasonable"):
+      builder.add_entry("four")
+      builder.add_entry("five")
+      builder.add_object():
+        builder.add_entry("six", 6)
+        builder.add_entry("seven", 7)
+
+    builder.finish()
+    validate_json_object(builder)
+    let expected = """
+{"one": 1,"two": 2,"three": 3,
+  "reasonable": ["four","five",
+    {"six": 6,"seven": 7}]}"""
+    check($builder == expected)
+
+
 
