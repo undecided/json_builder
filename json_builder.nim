@@ -158,7 +158,8 @@ template add_object*(builder: var JsonBuilder, key:string, code: untyped): untyp
   builder.close()
 
 template add_object*(builder: var JsonBuilder, code: untyped): untyped =
-  ## Add an object as an element to the current container.
+  ## Anyone know why making key default to empty string on our counterpart
+  ## template causes an error?
   builder.add_object("", code)
 
 proc array_entry*[T](builder: var JsonBuilder, item: T) =
