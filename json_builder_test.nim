@@ -54,7 +54,7 @@ suite "JSON object":
         builder.add_array("a"):
           builder.add_entry(0)
           builder.add_entry(1)
-        builder.add_entry("b"):
+        builder.add_array("b"):
           builder.add_entry(0)
           builder.add_entry(1)
     builder.finish()

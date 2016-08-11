@@ -151,7 +151,7 @@ template add_array*(builder: var JsonBuilder, code: untyped): untyped =
   ## template causes an error?
   builder.add_array("", code)
 
-template add_object*(builder: var JsonBuilder, key, code: untyped): untyped =
+template add_object*(builder: var JsonBuilder, key:string, code: untyped): untyped =
   ## Add an object as an element to the current container.
   builder.open(key, "{")
   code
