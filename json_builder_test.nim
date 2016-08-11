@@ -48,6 +48,18 @@ suite "JSON object":
     builder.finish()
     validate_json_object(builder)
 
+  test "it lets us add an array in an object in an array":
+    builder.add_array "board":
+      builder.add_object:
+        builder.add_array("a"):
+          builder.add_entry(0)
+          builder.add_entry(1)
+        builder.add_entry("b"):
+          builder.add_entry(0)
+          builder.add_entry(1)
+    builder.finish()
+    validate_json_object(builder)
+
   test "it is readable":
     builder.add_entry("does", "this")
     builder.add_object("seem"):

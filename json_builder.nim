@@ -151,11 +151,15 @@ template add_array*(builder: var JsonBuilder, code: untyped): untyped =
   ## template causes an error?
   builder.add_array("", code)
 
-template add_object*(builder: var JsonBuilder, key = "", code: untyped): untyped =
+template add_object*(builder: var JsonBuilder, key, code: untyped): untyped =
   ## Add an object as an element to the current container.
   builder.open(key, "{")
   code
   builder.close()
+
+template add_object*(builder: var JsonBuilder, code: untyped): untyped =
+  ## Add an object as an element to the current container.
+  builder.add_object("", code)
 
 proc array_entry*[T](builder: var JsonBuilder, item: T) =
   ## Add an item to the current object, assuming our container is an array
@@ -185,6 +189,6 @@ proc add_entry*[T](builder: var JsonBuilder, key: string, value: T) {.raises: [I
   builder.object_entry key, value
 
 proc `$`*(builder: JsonBuilder): string =
-  ## standard toString
+  ## standard toString - JSON representation as it currently stands
   builder.output
 
