@@ -190,7 +190,7 @@ proc add_entry*[T](builder: var JsonBuilder, value: T) {.raises: [InvalidEntryEr
   ## Add a value to the current array, making sure our container is an array first
   if not builder.is_array_context():
     raise newException(InvalidEntryError, "No value given; Both key and value required for an entry to an object")
-  #builder.array_entry value
+  builder.array_entry value
 
 proc add_entry*[T](builder: var JsonBuilder, key: string, value: T) {.raises: [InvalidEntryError] .} =
   ## Add a key/value to the current object, making sure our container is an object first
