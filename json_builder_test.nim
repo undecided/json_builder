@@ -148,6 +148,3 @@ suite "semi-compact JSON object":
   "reasonable": ["four","five",
     {"six": 6,"seven": 7}]}"""
     check($builder == expected)
-
-
-
