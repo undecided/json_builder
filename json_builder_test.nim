@@ -8,11 +8,11 @@ var builder: JsonBuilder
 template validate_json_object(builder: JsonBuilder) =
   check(parseJson($(builder)).kind == JObject)
 
-suite "JSON object":
+suite "valid JSON object":
   setup:
     builder = newJsonObjectBuilder()
 
-  test "it produces valid json object":
+  test "it produces valid empty json object":
     builder.finish()
     validate_json_object(builder)
 
@@ -89,7 +89,7 @@ suite "JSON object":
     check($builder == expected)
 
 
-suite "compact JSON object":
+suite "valid compact JSON object":
   setup:
     builder = newCompactJsonObjectBuilder()
 
@@ -108,8 +108,7 @@ suite "compact JSON object":
     validate_json_object(builder)
     check(builder.`$`.count(Whitespace + NewLines) == 0)
 
-
-  test "it is unreadable":
+  test "it is terse":
     builder.add_entry("does", "this")
     builder.add_object("seem"):
       builder.add_array("reasonable"):
